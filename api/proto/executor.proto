@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package code_executor;
+
+option go_package = "github.com/lindstorm76/code_executor/api/pb";
+
+// ExecutorService handles code execution.
+service ExecutorService {
+	// Execute a job.
+	rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+}
+
+message ExecuteRequest {
+  string subbmission_id  = 1;
+  string code = 2;
+  string language = 3;
+}
+
+message ExecuteResponse {
+  string submission_id = 1;
+  string stdout = 2;
+  string stderr = 3;
+  int32 exit_code = 4;
+   // SUCCESS, TIME_LIMIT_EXCEEDED, MEMORY_LIMIT_EXCEEDED, RUNTIME_ERROR
+  string status = 5;
+}
