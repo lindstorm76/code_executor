@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package code_executor;
 
-option go_package = "github.com/lindstorm76/codejudge/api/pb";
+option go_package = "github.com/lindstorm76/code_executor/api/pb";
 
 // SubmissionService handles code submission for execution.
 service SubmissionService {

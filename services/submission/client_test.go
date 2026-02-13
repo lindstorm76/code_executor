@@ -28,7 +28,7 @@ func TestSubmission(t *testing.T) {
 
 	// Try submitting a code.
 	response, err := client.Submit(ctx, &pb.SubmitRequest{
-		Code: "console.log('Hello, world!')",
+		Code: "console.log('Hello from Node.js!')",
 		Language: "node.js",
 	})
 
@@ -40,7 +40,7 @@ func TestSubmission(t *testing.T) {
 
 	// Try submitting another code.
 	response, err = client.Submit(ctx, &pb.SubmitRequest{
-		Code: "print('Hello, world!')",
+		Code: "print('Hello from Python!')",
 		Language: "python",
 	})
 
