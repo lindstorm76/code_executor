@@ -41,7 +41,7 @@ func (q *Queue) Enqueue(ctx context.Context, job *Job) error {
 }
 
 func (q *Queue) Dequeue(ctx context.Context) (*Job, error) {
-	result, err := q.client.BRPop(ctx, 5 * time.Second).Result()
+	result, err := q.client.BRPop(ctx, 5 * time.Second, q.queueName).Result()
 
 	if err != nil {
 		return nil, err
