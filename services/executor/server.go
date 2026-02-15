@@ -6,40 +6,34 @@ import (
 	"log"
 	"net"
 	"os/exec"
-	"time"
 
 	pb "github.com/lindstorm76/code_executor/api/pb/api/proto"
+	"github.com/lindstorm76/code_executor/services/runner"
 	"google.golang.org/grpc"
 )
 
 type executorServer struct {
 	pb.UnimplementedExecutorServiceServer
+
+	dockerRunner *runner.DockerRunner
 }
 
 func (s *executorServer) Execute(ctx context.Context, req *pb.ExecuteRequest) (*pb.ExecuteResponse, error) {
-	log.Printf("executing submission %s", req.SubbmissionId)
-
-	// Get command to execute.
-	cmd, err := getExecutionCommand(req.Code, req.Language)
-
-	if err != nil {
-		log.Printf("failed to get execution command for submission %s", req.SubbmissionId)
-		
-		return nil, err
-	}
-
-	// Set timeout for the execution, allowing up to 60 seconds.
-	execCtx, cancel := context.WithTimeout(ctx, 60 * time.Second)
-
-	defer cancel()
+	log.Printf("executing submission %s inside docker container", req.SubbmissionId)
 
 	// Execute the command.
-	stdout, stderr, exitCode, err := executeCommand(ctx, cmd)
+	stdout, stderr, exitCode, err  := s.dockerRunner.ExecuteCode(ctx, req.Code, req.Language)
+
 	status := "SUCCESS"
 
-	if execCtx.Err() == context.DeadlineExceeded {
-		status = "TIME_LIMIT_EXCEEDED"
-	} else if exitCode == 0 {
+	if err != nil {
+		if err.Error() == "execution timeout" {
+			status = "TIME_LIMIT_EXCEEDED"
+		} else {
+			status = "RUNTIME_ERROR"
+			stderr = err.Error()
+		}
+	} else if exitCode != 0 {
 		status = "RUNTIME_ERROR"
 	}
 
@@ -78,6 +72,14 @@ func executeCommand(ctx context.Context, cmd *exec.Cmd) (stdout, stderr string, 
 }
 
 func main() {
+	dockerRunner, err := runner.NewDockerRunner()
+
+	if err != nil {
+		log.Fatalf("failed to initiate docker runner: %v", err)
+	}
+
+	defer dockerRunner.Close()
+
 	listener, err := net.Listen("tcp", ":3002")
 
 	if err != nil {
@@ -86,9 +88,11 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	pb.RegisterExecutorServiceServer(grpcServer, &executorServer{})
+	pb.RegisterExecutorServiceServer(grpcServer, &executorServer{
+		dockerRunner: dockerRunner,
+	})
 
-	log.Println("executor server listening on :3002")
+	log.Println("executor server (docker) listening on :3002")
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve gRPC server: %v", err)
