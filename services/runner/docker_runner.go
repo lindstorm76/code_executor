@@ -30,8 +30,14 @@ func NewDockerRunner () (*DockerRunner, error) {
 
 func (d *DockerRunner) getImageName(language string) string {
 	switch language {
-	case "node.js": return "node:20-alpine"
-	case "python": return "python:3.12-alpine"
+	// On the fly.
+	case "node.js": return "node:20-alpine";
+	case "python":     return "python:3.11-alpine";
+	case "python2":    return "python:2.7-alpine";
+	case "ruby":       return "ruby:3.2-alpine";
+	case "php":        return "php:8.2-alpine";
+	case "perl":       return "perl:5.38-slim";
+	case "lua":        return "nickblah/lua:5.4-alpine";
 	default: return ""
 	}
 }
@@ -40,9 +46,19 @@ func (d *DockerRunner) getExecutionCommand(code, language string) ([]string, err
 	switch language {
 	case "node.js":
 		return []string{"node", "-e", code}, nil
-	case "python" : 
+	case "python": 
 		return []string{"python3", "-c", code}, nil
-		default: return nil, fmt.Errorf("language %s not supported", language)
+	case "python2":
+		return []string{"python2", "-c", code}, nil
+	case "ruby":
+		return []string{"ruby", "-e", code}, nil
+	case "php":
+		return []string{"php", "-r", code}, nil
+	case "perl":
+		return []string{"perl", "-e", code}, nil
+	case "lua":
+		return []string{"lua", "-e", code}, nil
+	default: return nil, fmt.Errorf("language %s not supported", language)
 	}
 }
 
